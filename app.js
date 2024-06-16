@@ -8,7 +8,9 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const wrapAsymc = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-app.use(express.static(path.join(__dirname,"/public")))
+const {listingSchema} = require("./schema.js");
+app.use(express.static(path.join(__dirname,"/public")));
+
 
 
 app.set("view engine" ,"ejs");
@@ -16,6 +18,15 @@ app.set("views" , path.join(__dirname , "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.engine('ejs' , ejsMate);
+
+const validateListing = (req,res,next)=>{
+  let {error} = listingSchema.validate(req.body);
+  if(error){
+    throw new ExpressError(400, error);
+  }else{
+    next();
+  }
+} 
 
 async function main(){
     await mongoose.connect(MONGO_URL);
@@ -53,7 +64,8 @@ app.get("/listings/:id", wrapAsymc (async (req, res) => {
 
   
 //Create Route
-app.post("/listings", wrapAsymc (async(req, res) => {
+app.post("/listings", validateListing,
+  wrapAsymc (async(req, res) => {
     const newListing = new Listing(req.body.listing);
     await newListing.save();
     res.redirect("/listings");
@@ -67,14 +79,14 @@ app.get("/listings/:id/edit", wrapAsymc (async (req, res) => {
   }));
   
   //Update Route
-  app.put("/listings/:id", wrapAsymc (async (req, res) => {
+  app.put("/listings/:id",validateListing,
+     wrapAsymc (async (req, res) => {
     let { id } = req.params;
     await Listing.findByIdAndUpdate(id, { ...req.body.listing });
     res.redirect(`/listings/${id}`);
   }));
   
   //Delete Route
-
   app.delete("/listings/:id", wrapAsymc( async (req, res) => {
     let { id } = req.params;
     let deletedListing = await Listing.findByIdAndDelete(id);
@@ -88,7 +100,8 @@ app.all("*", (req,res,next)=>{
 });
 
 app.use((err , req , res , next) => {
-  let {statusCode, message} = err;
-  res.status(statusCode).send(message);
+  let {statusCode=500, message="Somthing Went Wrong"} = err;
+  // res.status(statusCode).send(message);
+  res.status(statusCode).render("listings/error.ejs" , {message})
 });
 
