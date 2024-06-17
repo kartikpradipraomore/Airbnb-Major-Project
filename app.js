@@ -9,8 +9,9 @@ const ejsMate = require("ejs-mate");
 const wrapAsymc = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const {listingSchema} = require("./schema.js");
-app.use(express.static(path.join(__dirname,"/public")));
 
+ 
+app.use(express.static(path.join(__dirname,"/public")));
 
 
 app.set("view engine" ,"ejs");
