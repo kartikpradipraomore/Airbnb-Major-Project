@@ -64,6 +64,7 @@ app.get("/listings/:id", wrapAsymc (async (req, res) => {
   }));
 
   
+  
 //Create Route
 app.post("/listings", validateListing,
   wrapAsymc (async(req, res) => {
